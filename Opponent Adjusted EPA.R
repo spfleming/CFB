@@ -4,6 +4,15 @@ library(ggimage)
 library(broom)
 library(glmnet)
 
+games_19 <- cfb_game_info(2019)
+
+pbp_2019 <- data.frame()
+for(i in 1:15){
+  data <- cfb_pbp_data(year = 2019, season_type = "regular", week = i, epa_wpa = TRUE) %>% mutate(week = i)
+  df <- data.frame(data)
+  pbp_2019 <- bind_rows(pbp_2019, df)
+} 
+
 plays <- left_join(pbp_2019, games_19, by = c("game_id" = "id"))
 pbp_19 <- plays %>% filter(rush == 1| pass == 1) %>%
   filter(!is.na(home_conference) & !is.na(away_conference)) %>%
