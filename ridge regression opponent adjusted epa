@@ -2,7 +2,7 @@
 
 #`offense_data` is just game by game: team, opponent, epa_play
 
-# All
+library(glmnet)
 
 off <- model.matrix(~ offense_data$off - 1)
 def <- model.matrix(~ offense_data$def -1 )
