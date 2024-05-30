@@ -1,0 +1,47 @@
+#Proof of concept for glmnet opponent adjustments
+
+#`offense_data` is just game by game: team, opponent, epa_play
+
+# All
+
+off <- model.matrix(~ offense_data$off - 1)
+def <- model.matrix(~ offense_data$def -1 )
+hfa <- model.matrix(~ offense_data$home - 1)
+
+x_var <- cbind(off, def, hfa)
+
+y_var <-as.matrix(offense_data[, "epa"])
+
+# Setting the range of lambda values
+lambda_seq <- 10^seq(5, -5, by = -.05)
+
+
+# Using glmnet function to build the ridge regression in r
+fit <- glmnet(x_var, y_var, alpha = 0, lambda  = lambda_seq)
+
+
+# Using cross validation glmnet
+ridge_cv <- cv.glmnet(x_var, y_var, alpha = 0, lambda = lambda_seq)
+
+# Best lambda value
+best_lambda <- ridge_cv$lambda.min
+best_lambda
+
+
+best_ridge <- glmnet(x_var, y_var, alpha = 0, lambda = best_lambda)
+
+
+est <- coef(best_ridge) %>% as.matrix() |>
+  as.data.frame()
+
+est$term <- rownames(est)
+
+# Intercepts
+intercept <- est |> filter(grepl("Intercept", term))
+intercept <- intercept$s0[1]
+
+
+off <- est |> filter(grepl("off", term) & !grepl(".conf", term) &!grepl("subDiv", term)) |>
+  tidyr::separate(term, into = c("junk", 'team'), sep = "offense_data.off") |> 
+  dplyr::select(team, epa_off = s0) |> filter(!is.na(team))
+rownames(off) <- NULL
